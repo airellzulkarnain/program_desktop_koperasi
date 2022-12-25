@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+from sqlalchemy.orm import Session
 
 
-def pembelian(parent: ttk.Notebook):
+def pembelian(db: Session, parent: ttk.Notebook):
     pass
