@@ -15,6 +15,14 @@ def buat_kunci_akses(db: Session):
         db.commit()
 
 
+def angka_mudah_dibaca(angka: str | int) -> str:
+    angka = list(angka[::-1]) if isinstance(angka, str) else list(str(angka)[::-1])
+    for i in range(len(angka)):
+        angka[i] = angka[i]+'.' if not (i+1) % 3 else angka[i]
+    angka[-1] = angka[-1].replace('.', '')
+    return ''.join(angka)[::-1]
+
+
 def bagi_pembayaran(nominal: int, dibagi: int)-> list:
     rupiah: int = [100_000, 50_000, 20_000, 10_000, 5_000, 2_000, 1_000, 500]
     result: int = 0
@@ -61,7 +69,7 @@ def jual(db: Session, id_barang: int, jumlah_terjual: int):
 
 
 def ambil_barang(db: Session):
-    return db.scalars(select(Barang)).all()
+    return db.scalars(select(Barang).where(Barang.tersedia_saat_ini > 0)).all()
 
 
 def ambil_siswa(db: Session):
@@ -361,7 +369,11 @@ def buat_laporan(
 
 
 def verifikasi_kunci_akses(db: Session, key: str):
-    return db.scalar(select(Access.key)) == key + ambil_uuid()
+    key_di_db = db.scalar(select(Access.key)) 
+    if key_di_db == key + ambil_uuid():
+        return key_di_db
+    else:
+        return False
 
 
 def ubah_kunci_akses(db: Session, new_key: str):

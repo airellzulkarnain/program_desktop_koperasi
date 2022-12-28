@@ -1,0 +1,172 @@
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
+from sqlalchemy.orm import Session
+from database import get_db
+import crud
+
+
+def penjualan(parent: ttk.Notebook):
+    global himpunan_barang
+    global total_harga_value
+    himpunan_barang = muat_barang()
+    himpunan_jual: list = []
+    total_harga = tk.StringVar()
+    total_harga_value = 0
+    total_harga.set('Total Harga: Rp. 0')
+    harga = tk.StringVar()
+    main_frame = ttk.Frame(parent)
+    sub_frame_1 = ttk.Frame(main_frame)
+    sub_frame_2 = ttk.Frame(main_frame)
+    sub_frame_3 = ttk.Frame(main_frame)
+    konfirmasi_button = ttk.Button(sub_frame_3, text='Konfirmasi', command=lambda: konfirmasi(), style='green.TButton')
+    batalkan_button = ttk.Button(sub_frame_3, text='Batalkan', command=lambda: batalkan(), state='disabled', style='red.TButton')
+    treeview_jual = ttk.Treeview(sub_frame_2, columns=('barang', 'jumlah', 'harga_satuan', 'total'), show='headings')
+    scrollbar_jual = ttk.Scrollbar(sub_frame_2, orient=tk.VERTICAL, command=treeview_jual.yview_scroll)
+    pilih_barang_combobox = ttk.Combobox(sub_frame_1, values=[x for x in himpunan_barang.keys()])
+    jumlah_barang_spinbox = ttk.Spinbox(sub_frame_1, from_=0, to=0, command=lambda: spinbox_dipilih())
+    jumlah_barang_spinbox.set(0)
+    tambah_button = ttk.Button(sub_frame_1, text='Tambah', command=lambda: tambah(), style='blue.TButton')
+
+
+    def perbarui_harga():
+        try: 
+            harga.set(
+                "Harga: Rp. " + 
+                f"{crud.angka_mudah_dibaca(himpunan_barang[pilih_barang_combobox.get()]['harga'])}" + 
+                " x " + 
+                f"{jumlah_barang_spinbox.get()}"
+                " (Rp. " + 
+                f"{crud.angka_mudah_dibaca(int(himpunan_barang[pilih_barang_combobox.get()]['harga'])*int(jumlah_barang_spinbox.get()))})"
+            )
+        except KeyError:
+            harga.set('Harga: Rp. 0 x 0 (Rp. 0)')
+
+    
+    def combobox_dipilih(event):
+        jumlah_barang_spinbox.configure(from_=1, to=himpunan_barang[pilih_barang_combobox.get()]['tersedia'])
+        jumlah_barang_spinbox.set(1)
+        perbarui_harga()
+
+
+    def spinbox_dipilih():
+        perbarui_harga()
+    
+
+    def tambah():
+        global total_harga_value
+        total = int(himpunan_barang[pilih_barang_combobox.get()]['harga'])*int(jumlah_barang_spinbox.get())
+        himpunan_jual.append({
+            'id_barang': himpunan_barang[pilih_barang_combobox.get()]['id'], 
+            'jumlah_terjual': int(jumlah_barang_spinbox.get())
+        })
+        treeview_jual.insert('', 'end', 
+            values=(
+                pilih_barang_combobox.get(), 
+                jumlah_barang_spinbox.get(), 
+                crud.angka_mudah_dibaca(
+                himpunan_barang[pilih_barang_combobox.get()]['harga']
+                ), 
+                crud.angka_mudah_dibaca(total)
+            )
+        )
+        himpunan_barang[pilih_barang_combobox.get()]['tersedia'] -= int(jumlah_barang_spinbox.get())
+        pilih_barang_combobox.set('')
+        jumlah_barang_spinbox.configure(from_=0, to=0)
+        jumlah_barang_spinbox.set(0)
+        total_harga_value += total
+        total_harga.set('Total Harga: Rp. '+crud.angka_mudah_dibaca(total_harga_value))
+        batalkan_button.state(['!disabled'])
+    
+
+    def konfirmasi():
+        if messagebox.askokcancel('Konfirmasi', 'Apakah anda yakin ?'): 
+            global himpunan_barang
+            global total_harga_value
+            for barang in himpunan_jual:
+                jual(barang['id_barang'], barang['jumlah_terjual'])
+            treeview_jual.delete(*treeview_jual.get_children())
+            total_harga.set('Total Harga: Rp. 0')
+            total_harga_value = 0
+            himpunan_barang = muat_barang()
+            pilih_barang_combobox.configure(values=[x for x in himpunan_barang.keys()])
+            pilih_barang_combobox.set('')
+            jumlah_barang_spinbox.configure(from_=0, to=0)
+            jumlah_barang_spinbox.set(0)
+            himpunan_jual.clear()
+            batalkan_button.state(['disabled'])
+
+
+    def batalkan():
+        if messagebox.askokcancel('Batalkan', 'Apakah anda yakin ?', icon=messagebox.WARNING): 
+            global himpunan_barang
+            global total_harga_value
+            treeview_jual.delete(*treeview_jual.get_children())
+            total_harga.set('Total Harga: Rp. 0')
+            total_harga_value = 0
+            himpunan_barang = muat_barang()
+            pilih_barang_combobox.configure(values=[x for x in himpunan_barang.keys()])
+            pilih_barang_combobox.set('')
+            jumlah_barang_spinbox.configure(from_=0, to=0)
+            jumlah_barang_spinbox.set(0)
+            himpunan_jual.clear()
+            batalkan_button.state(['disabled'])
+
+        
+    
+
+    main_frame.grid(column=1, row=1, sticky=tk.NSEW)
+    main_frame.columnconfigure(1, weight=1)
+    main_frame.rowconfigure(1, weight=1)
+    main_frame.rowconfigure(2, weight=18)
+    main_frame.rowconfigure(3, weight=1)
+    sub_frame_1.grid(column=1, row=1, sticky=tk.EW)
+    sub_frame_1.rowconfigure(1, weight=1)
+    sub_frame_1.columnconfigure(1, weight=1)
+    sub_frame_1.columnconfigure(2, weight=4)
+    sub_frame_1.columnconfigure(3, weight=1)
+    sub_frame_1.columnconfigure(4, weight=4)
+    sub_frame_1.columnconfigure(5, weight=3)
+    sub_frame_1.columnconfigure(6, weight=4)
+    sub_frame_2.columnconfigure(1, weight=1)
+    sub_frame_2.rowconfigure(1, weight=1)
+    sub_frame_3.rowconfigure(1, weight=1)
+    sub_frame_3.columnconfigure(1, weight=6)
+    sub_frame_3.columnconfigure(2, weight=2)
+    sub_frame_3.columnconfigure(3, weight=2)
+    ttk.Label(sub_frame_1, text='Barang', font=('Arial', 12, 'normal')).grid(column=1, row=1, sticky=tk.EW, padx=6)
+    ttk.Label(sub_frame_1, text='Jumlah', font=('Arial', 12, 'normal')).grid(column=3, row=1, sticky=tk.EW, padx=6)
+    ttk.Label(sub_frame_1, textvariable=harga, font=('Arial', 12, 'normal'), justify='center', width=24).grid(column=6, row=1, sticky=tk.EW, padx=6)
+    pilih_barang_combobox.grid(column=2, row=1, sticky=tk.EW, padx=6)
+    jumlah_barang_spinbox.grid(column=4, row=1, sticky=tk.EW, padx=6)
+    tambah_button.grid(column=5, row=1, sticky=tk.NSEW, padx=6)
+    sub_frame_2.grid(column=1, row=2, sticky=tk.NSEW)
+    sub_frame_3.grid(column=1, row=3, sticky=tk.NSEW)
+    treeview_jual.grid(column=1, row=1, sticky=tk.NSEW)
+    scrollbar_jual.grid(column=2, row=1, sticky=tk.NS)
+    treeview_jual.configure(yscrollcommand=scrollbar_jual.set)
+    treeview_jual.heading('barang', text='Barang')
+    treeview_jual.heading('jumlah', text='Jumlah')
+    treeview_jual.heading('harga_satuan', text='Harga Satuan')
+    treeview_jual.heading('total', text='Total')
+    treeview_jual.column('barang', width=500)
+    treeview_jual.column('jumlah', width=10)
+    batalkan_button.grid(column=3, row=1, sticky=tk.NSEW, padx=6, pady=6)
+    konfirmasi_button.grid(column=2, row=1, sticky=tk.NSEW, padx=6, pady=6)
+    ttk.Label(sub_frame_3, textvariable=total_harga, font=('Arial', 14, 'bold'), width=24).grid(column=1, row=1, sticky=tk.NSEW,padx=6, pady=6)
+    perbarui_harga()
+    
+    pilih_barang_combobox.bind('<<ComboboxSelected>>', combobox_dipilih)
+    return main_frame
+
+
+@get_db
+def muat_barang(db: Session)-> dict:
+    himpunan_barang: dict = dict()
+    for barang in crud.ambil_barang(db):
+        himpunan_barang.update({barang.nama_barang: {'harga': barang.harga_jual, 'tersedia': barang.tersedia_saat_ini, 'id': barang.id}})
+    return himpunan_barang
+
+@get_db
+def jual(db: Session, id_barang: int, jumlah_terjual: int):
+    crud.jual(db, id_barang, jumlah_terjual)

@@ -26,7 +26,7 @@ def get_db(func):
     def wrapper(*args, **kwargs):
         db = SessionLocal()
         try:
-            result = func(db)
+            result = func(db, *args, **kwargs)
         finally:
             db.close()
         return result
