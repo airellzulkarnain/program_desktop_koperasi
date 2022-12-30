@@ -1,2 +1,4 @@
 venv/
 app/dist/
+app/build/
+app/__pycache__/
