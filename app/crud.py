@@ -69,7 +69,7 @@ def jual(db: Session, id_barang: int, jumlah_terjual: int):
 
 
 def ambil_barang(db: Session):
-    return db.scalars(select(Barang).where(Barang.tersedia_saat_ini > 0)).all()
+    return db.scalars(select(Barang)).all()
 
 
 def ambil_siswa(db: Session):
@@ -115,8 +115,8 @@ def tambah_barang(
     db: Session,
     nama_barang: str,
     tersedia: int,
-    modal: float,
-    harga_jual: float,
+    modal: int,
+    harga_jual: int,
     bisa_dicicil: bool,
 ):
     saldo_terakhir = db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0
@@ -142,7 +142,7 @@ def tambah_barang(
 
 
 def tambah_stok_barang(db: Session, id_barang: int, jumlah_tambah: int):
-    barang = db.scalar(select(barang).where(Barang.id == id_barang))
+    barang = db.scalar(select(Barang).where(Barang.id == id_barang))
     barang.tersedia_saat_ini += jumlah_tambah
     if barang.tersedia_saat_ini > barang.tersedia:
         barang.tersedia = barang.tersedia_saat_ini
@@ -167,6 +167,8 @@ def hapus_barang(db: Session, id_barang: int):
         db.add(Pembukuan(uraian=f'Hapus: {id_barang}: {barang.nama_barang}: x{barang.tersedia}', debit=nominal, saldo=saldo_terakhir+nominal))
         db.delete(barang)
         db.commit()
+    else: 
+        return -1
 
 
 
@@ -192,7 +194,10 @@ def tambah_siswa(db: Session, file_loc: str):
 
 
 def hapus_siswa(db: Session):
-    db.execute(delete(Siswa).where(Siswa.himpunan_cicilan == []))
+    himpunan_siswa = db.scalars(select(Siswa))
+    for siswa in himpunan_siswa:
+        if len(siswa.himpunan_cicilan) == 0:
+            db.delete(siswa)
     db.commit()
 
 

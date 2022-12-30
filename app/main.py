@@ -34,10 +34,10 @@ def main(parent: tk.Tk):
 
     panes = ttk.Notebook(main_window)
     panes.grid(column=1, row=1, sticky=tk.NSEW)
+    panes.add(stok(panes), text='Stok')
     panes.add(penjualan(panes), text='Penjualan')
-    panes.add(cicilan(panes), text='cicilan')
-    panes.add(pembukuan(panes), text='pembukuan')
-    panes.add(stok(panes), text='stok')
+    panes.add(cicilan(panes), text='Cicilan')
+    panes.add(pembukuan(panes), text='Pembukuan')
 
     panes.columnconfigure(1, weight=1)
     panes.rowconfigure(1, weight=1)
