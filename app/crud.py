@@ -10,7 +10,7 @@ import subprocess as sp
 
 def buat_kunci_akses(db: Session):
     if not db.scalar(select(Access)):
-        key = Access(key=ambil_uuid()*2)
+        key = Access(key=ambil_uuid() * 2)
         db.add(key)
         db.commit()
 
@@ -18,26 +18,26 @@ def buat_kunci_akses(db: Session):
 def angka_mudah_dibaca(angka: str | int) -> str:
     angka = list(angka[::-1]) if isinstance(angka, str) else list(str(angka)[::-1])
     for i in range(len(angka)):
-        angka[i] = angka[i]+'.' if not (i+1) % 3 else angka[i]
-    angka[-1] = angka[-1].replace('.', '')
-    return ''.join(angka)[::-1]
+        angka[i] = angka[i] + "." if not (i + 1) % 3 else angka[i]
+    angka[-1] = angka[-1].replace(".", "")
+    return "".join(angka)[::-1]
 
 
-def bagi_pembayaran(nominal: int, dibagi: int)-> list:
+def bagi_pembayaran(nominal: int, dibagi: int) -> list:
     rupiah: int = [100_000, 50_000, 20_000, 10_000, 5_000, 2_000, 1_000, 500]
     result: int = 0
 
     while nominal:
-        x = nominal//dibagi
+        x = nominal // dibagi
         for uang in rupiah:
             if uang <= x:
                 x = uang
                 break
             elif uang == 500:
-                return [result+nominal]+[result for i in range(dibagi-1)]
+                return [result + nominal] + [result for i in range(dibagi - 1)]
 
-        result += (nominal//(x*dibagi))*x
-        nominal = (nominal%(x*dibagi))
+        result += (nominal // (x * dibagi)) * x
+        nominal = nominal % (x * dibagi)
     return [result for i in range(dibagi)]
 
 
@@ -86,10 +86,10 @@ def ambil_cicilan(db: Session):
     return db.execute(
         select(
             Barang.nama_barang,
-            Barang.harga_jual, 
+            Barang.harga_jual,
             Siswa.nama,
-            Siswa.kelas, 
-            Cicilan.id, 
+            Siswa.kelas,
+            Cicilan.id,
             Cicilan.id_barang,
             Cicilan.nisn_siswa,
             Cicilan.kali_pembayaran,
@@ -102,9 +102,17 @@ def ambil_cicilan(db: Session):
 
 
 def biaya_tambahan(db: Session, uraian: str, debit: float = 0.0, kredit: float = 0.0):
-    saldo_terakhir = db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0
+    saldo_terakhir = (
+        db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0
+    )
     if debit > 0.0 and kredit == 0.0 and len(uraian) > 0:
-        db.add(Pembukuan(uraian="Biaya - biaya: "+uraian, debit=debit, saldo=saldo_terakhir + debit))
+        db.add(
+            Pembukuan(
+                uraian="Biaya - biaya: " + uraian,
+                debit=debit,
+                saldo=saldo_terakhir + debit,
+            )
+        )
     elif kredit > 0.0 and debit == 0.0 and len(uraian) > 0:
         db.add(
             Pembukuan(
@@ -124,7 +132,9 @@ def tambah_barang(
     harga_jual: int,
     bisa_dicicil: bool,
 ):
-    saldo_terakhir = db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0
+    saldo_terakhir = (
+        db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0
+    )
     kredit = modal * tersedia
     barang = Barang(
         nama_barang=nama_barang,
@@ -165,20 +175,42 @@ def tambah_stok_barang(db: Session, id_barang: int, jumlah_tambah: int):
 
 def hapus_barang(db: Session, id_barang: int):
     barang = db.scalar(select(Barang).where(Barang.id == id_barang))
-    saldo_terakhir = db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0.0
-    sudah_dijual = bool(db.scalar(select(func.count(Pembukuan.id)).where(Pembukuan.uraian.like(f'%Jual: {id_barang}: {barang.nama_barang}: x%'))))
-    if barang.tersedia == barang.tersedia_saat_ini and barang.himpunan_cicilan == [] and not sudah_dijual:
-        nominal = barang.tersedia*barang.modal
-        db.add(Pembukuan(uraian=f'Hapus: {id_barang}: {barang.nama_barang}: x{barang.tersedia}', debit=nominal, saldo=saldo_terakhir+nominal))
+    saldo_terakhir = (
+        db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0.0
+    )
+    sudah_dijual = bool(
+        db.scalar(
+            select(func.count(Pembukuan.id)).where(
+                Pembukuan.uraian.like(f"%Jual: {id_barang}: {barang.nama_barang}: x%")
+            )
+        )
+    )
+    if (
+        barang.tersedia == barang.tersedia_saat_ini
+        and barang.himpunan_cicilan == []
+        and not sudah_dijual
+    ):
+        nominal = barang.tersedia * barang.modal
+        db.add(
+            Pembukuan(
+                uraian=f"Hapus: {id_barang}: {barang.nama_barang}: x{barang.tersedia}",
+                debit=nominal,
+                saldo=saldo_terakhir + nominal,
+            )
+        )
         db.delete(barang)
         db.commit()
     elif barang.tersedia_saat_ini == 0:
-        db.add(Pembukuan(uraian=f'Hapus: {id_barang}: {barang.nama_barang}: x{barang.tersedia}', saldo=saldo_terakhir))
+        db.add(
+            Pembukuan(
+                uraian=f"Hapus: {id_barang}: {barang.nama_barang}: x{barang.tersedia}",
+                saldo=saldo_terakhir,
+            )
+        )
         db.delete(barang)
         db.commit()
-    else: 
+    else:
         return -1
-
 
 
 def tambah_siswa(db: Session, file_loc: str):
@@ -233,11 +265,13 @@ def tambah_cicilan(
 
 def bayar_cicilan(db: Session, id_cicilan: int, kali_bayar: int, harga_barang: float):
     cicilan = db.scalar(select(Cicilan).where(Cicilan.id == id_cicilan))
-    barang = db.scalar(
-        select(Barang).where(Barang.id == cicilan.id_barang)
-    )
+    barang = db.scalar(select(Barang).where(Barang.id == cicilan.id_barang))
     saldo_terakhir = db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc()))
-    harga = sum(bagi_pembayaran(harga_barang, cicilan.kali_pembayaran)[cicilan.sudah_dibayar:cicilan.sudah_dibayar+kali_bayar])
+    harga = sum(
+        bagi_pembayaran(harga_barang, cicilan.kali_pembayaran)[
+            cicilan.sudah_dibayar : cicilan.sudah_dibayar + kali_bayar
+        ]
+    )
     cicilan.sudah_dibayar += kali_bayar
     db.add(
         Pembukuan(
@@ -266,12 +300,12 @@ def bayar_cicilan(db: Session, id_cicilan: int, kali_bayar: int, harga_barang: f
 def buat_laporan(
     db: Session,
     range_: int,
-    sekolah: str, 
-    dir_loc: str, 
+    sekolah: str,
+    dir_loc: str,
     bulan: int | None = None,
     tahun: int | None = None,
     dari: datetime | None = None,
-    sampai: datetime | None = None
+    sampai: datetime | None = None,
 ):
     laporan = dict()
     if range_ == 0:  # Bulan
@@ -321,7 +355,7 @@ def buat_laporan(
                 laporan["Jual " + uraian[1] + " " + uraian[2]] = pembukuan.debit
             elif uraian[0] == "Cicilan":
                 laporan["Cicilan"] = pembukuan.debit
-            elif not 'Buat Cicilan' in uraian[0]:
+            elif not "Buat Cicilan" in uraian[0]:
                 laporan[pembukuan.uraian] = pembukuan.debit - pembukuan.kredit
 
     laporan["saldo_awal"] = (
@@ -332,58 +366,68 @@ def buat_laporan(
     )
     laporan["saldo_akhir"] = himpunan_pembukuan[-1].saldo
 
-    pdf = FPDF(orientation='P', unit='pt', format='A4')
+    pdf = FPDF(orientation="P", unit="pt", format="A4")
     pdf.add_page()
-    pdf.set_font('Times', 'B', 16)
-    pdf.cell(0, 16, sekolah.upper(), align='C')
+    pdf.set_font("Times", "B", 16)
+    pdf.cell(0, 16, sekolah.upper(), align="C")
     pdf.ln(16)
-    pdf.set_font('Times', '', 14)
-    pdf.cell(0, 14, 'Laporan Koperasi', align='C')
-    pdf.ln(14*1.25)
-    pdf.set_font('Times', '', 12)
-    if range_ == 0: # Bulan
-        pdf.cell(0, 10, f'Per Bulan {cld.month_name[bulan]} {tahun}', align='C')
-        pdf.ln(12*1.25)
-        file_name = f'laporan_{cld.month_name[bulan]}_{tahun}.pdf'
-    elif range_ == 1: # Tahun
-        pdf.cell(0, 10, f'Per Tahun {tahun}', align='C')
-        pdf.ln(12*1.25)
-        file_name = f'laporan_{tahun}.pdf'
-    elif range_ == 2: # Custom
-        pdf.cell(0, 10, f'Per {str(dari.date())} s/d {str(sampai.date())}', align='C')
-        pdf.ln(12*1.25)
-        file_name = f'laporan_{str(dari.date())}_-_{str(sampai.date())}.pdf'
+    pdf.set_font("Times", "", 14)
+    pdf.cell(0, 14, "Laporan Koperasi", align="C")
+    pdf.ln(14 * 1.25)
+    pdf.set_font("Times", "", 12)
+    if range_ == 0:  # Bulan
+        pdf.cell(0, 10, f"Per Bulan {cld.month_name[bulan]} {tahun}", align="C")
+        pdf.ln(12 * 1.25)
+        file_name = f"laporan_{cld.month_name[bulan]}_{tahun}.pdf"
+    elif range_ == 1:  # Tahun
+        pdf.cell(0, 10, f"Per Tahun {tahun}", align="C")
+        pdf.ln(12 * 1.25)
+        file_name = f"laporan_{tahun}.pdf"
+    elif range_ == 2:  # Custom
+        pdf.cell(0, 10, f"Per {str(dari.date())} s/d {str(sampai.date())}", align="C")
+        pdf.ln(12 * 1.25)
+        file_name = f"laporan_{str(dari.date())}_-_{str(sampai.date())}.pdf"
 
-    pdf.set_font('Times', 'B', 14)
-    pdf.cell(232, 16, 'Keterangan', 1, align='C')
-    pdf.cell(100, 16, 'Debit', 1, align='C')
-    pdf.cell(100, 16, 'Kredit', 1, align='C')
-    pdf.cell(100, 16, 'Saldo', 1, align='C')
+    pdf.set_font("Times", "B", 14)
+    pdf.cell(232, 16, "Keterangan", 1, align="C")
+    pdf.cell(100, 16, "Debit", 1, align="C")
+    pdf.cell(100, 16, "Kredit", 1, align="C")
+    pdf.cell(100, 16, "Saldo", 1, align="C")
     pdf.ln()
-    pdf.set_font('Times', '', 12)
-    saldo = laporan['saldo_awal']
-    pdf.cell(432, 16, 'Saldo Awal', 'LRB')
-    pdf.cell(100, 16,'Rp. ' + angka_mudah_dibaca(laporan['saldo_awal']), 'LRB')
+    pdf.set_font("Times", "", 12)
+    saldo = laporan["saldo_awal"]
+    pdf.cell(432, 16, "Saldo Awal", "LRB")
+    pdf.cell(100, 16, "Rp. " + angka_mudah_dibaca(laporan["saldo_awal"]), "LRB")
     pdf.ln()
     for keterangan, nominal in laporan.items():
-        if keterangan not in ['saldo_akhir', 'saldo_awal']: 
-            pdf.cell(232, 16, keterangan, 'LR')
-            pdf.cell(100, 16, 'Rp.' + angka_mudah_dibaca(nominal) if nominal > 0 else '', 'LR')
-            pdf.cell(100, 16, 'Rp.' + angka_mudah_dibaca(nominal) if nominal < 0 else '', 'LR')
+        if keterangan not in ["saldo_akhir", "saldo_awal"]:
+            pdf.cell(232, 16, keterangan, "LR")
+            pdf.cell(
+                100,
+                16,
+                "Rp." + angka_mudah_dibaca(nominal) if nominal > 0 else "",
+                "LR",
+            )
+            pdf.cell(
+                100,
+                16,
+                "Rp." + angka_mudah_dibaca(nominal) if nominal < 0 else "",
+                "LR",
+            )
             saldo += nominal
-            pdf.cell(100, 16, '', 'LR')
+            pdf.cell(100, 16, "", "LR")
             pdf.ln()
-    pdf.cell(432, 16, 'Saldo Akhir', 'LRT')
-    pdf.cell(100, 16,'Rp. ' + angka_mudah_dibaca(laporan['saldo_akhir']), 'LRT')
+    pdf.cell(432, 16, "Saldo Akhir", "LRT")
+    pdf.cell(100, 16, "Rp. " + angka_mudah_dibaca(laporan["saldo_akhir"]), "LRT")
     pdf.ln()
-    pdf.cell(532, 16, '', 'T')
+    pdf.cell(532, 16, "", "T")
     pdf.ln()
-    
-    pdf.output(dir_loc + '/' + file_name)
+
+    pdf.output(dir_loc + "/" + file_name)
 
 
 def verifikasi_kunci_akses(db: Session, key: str):
-    key_di_db = db.scalar(select(Access.key)) 
+    key_di_db = db.scalar(select(Access.key))
     if key_di_db == key + ambil_uuid():
         return key_di_db
     else:

@@ -44,13 +44,15 @@ def penjualan(parent: ttk.Notebook):
         sub_frame_1, values=[x for x in himpunan_barang.keys()]
     )
     jumlah_barang_spinbox = ttk.Spinbox(
-        sub_frame_1, from_=0, to=0, command=lambda: spinbox_dipilih(), state='readonly'
+        sub_frame_1, from_=0, to=0, command=lambda: spinbox_dipilih(), state="readonly"
     )
     jumlah_barang_spinbox.set(0)
     tambah_button = ttk.Button(
         sub_frame_1, text="Tambah", command=lambda: tambah(), style="blue.TButton"
     )
-    refresh_button = ttk.Button(sub_frame_1, text='Refresh...', command=lambda: refresh())
+    refresh_button = ttk.Button(
+        sub_frame_1, text="Refresh...", command=lambda: refresh()
+    )
 
     def perbarui_harga():
         try:
@@ -110,7 +112,6 @@ def penjualan(parent: ttk.Notebook):
         )
         batalkan_button.state(["!disabled"])
 
-    
     def refresh():
         global himpunan_barang
         global total_harga_value
@@ -125,8 +126,6 @@ def penjualan(parent: ttk.Notebook):
         jumlah_barang_spinbox.set(0)
         himpunan_jual.clear()
         batalkan_button.state(["disabled"])
-
-
 
     def konfirmasi():
         if messagebox.askokcancel("Konfirmasi", "Apakah anda yakin ?"):
@@ -203,7 +202,7 @@ def penjualan(parent: ttk.Notebook):
 def muat_barang(db: Session) -> dict:
     himpunan_barang: dict = dict()
     for barang in crud.ambil_barang(db):
-        if barang.tersedia_saat_ini > 0: 
+        if barang.tersedia_saat_ini > 0:
             himpunan_barang.update(
                 {
                     barang.nama_barang: {
