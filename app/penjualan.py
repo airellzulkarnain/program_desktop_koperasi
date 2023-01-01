@@ -44,7 +44,7 @@ def penjualan(parent: ttk.Notebook):
         sub_frame_1, values=[x for x in himpunan_barang.keys()]
     )
     jumlah_barang_spinbox = ttk.Spinbox(
-        sub_frame_1, from_=0, to=0, command=lambda: spinbox_dipilih()
+        sub_frame_1, from_=0, to=0, command=lambda: spinbox_dipilih(), state='readonly'
     )
     jumlah_barang_spinbox.set(0)
     tambah_button = ttk.Button(

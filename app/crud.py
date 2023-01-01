@@ -68,7 +68,9 @@ def jual(db: Session, id_barang: int, jumlah_terjual: int):
         db.commit()
 
 
-def ambil_barang(db: Session):
+def ambil_barang(db: Session, cicil: bool = False):
+    if cicil:
+        return db.scalars(select(Barang).where(Barang.bisa_dicicil == True)).all()
     return db.scalars(select(Barang)).all()
 
 
@@ -81,10 +83,13 @@ def ambil_pembukuan(db: Session):
 
 
 def ambil_cicilan(db: Session):
-    return db.scalars(
+    return db.execute(
         select(
             Barang.nama_barang,
+            Barang.harga_jual, 
             Siswa.nama,
+            Siswa.kelas, 
+            Cicilan.id, 
             Cicilan.id_barang,
             Cicilan.nisn_siswa,
             Cicilan.kali_pembayaran,
@@ -161,10 +166,14 @@ def tambah_stok_barang(db: Session, id_barang: int, jumlah_tambah: int):
 def hapus_barang(db: Session, id_barang: int):
     barang = db.scalar(select(Barang).where(Barang.id == id_barang))
     saldo_terakhir = db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0.0
-    sudah_ditambah = bool(db.scalar(select(func.count(Pembukuan.id)).where(Pembukuan.uraian.like(f'%Tambah: {id_barang}: {barang.nama_barang}: x%'))))
-    if barang.tersedia == barang.tersedia_saat_ini and (not barang.bisa_dicicil or barang.himpunan_cicilan == []) and not sudah_ditambah:
+    sudah_dijual = bool(db.scalar(select(func.count(Pembukuan.id)).where(Pembukuan.uraian.like(f'%Jual: {id_barang}: {barang.nama_barang}: x%'))))
+    if barang.tersedia == barang.tersedia_saat_ini and barang.himpunan_cicilan == [] and not sudah_dijual:
         nominal = barang.tersedia*barang.modal
         db.add(Pembukuan(uraian=f'Hapus: {id_barang}: {barang.nama_barang}: x{barang.tersedia}', debit=nominal, saldo=saldo_terakhir+nominal))
+        db.delete(barang)
+        db.commit()
+    elif barang.tersedia_saat_ini == 0:
+        db.add(Pembukuan(uraian=f'Hapus: {id_barang}: {barang.nama_barang}: x{barang.tersedia}', saldo=saldo_terakhir))
         db.delete(barang)
         db.commit()
     else: 

@@ -10,3 +10,5 @@ def stylize(style: Style):
     style.configure('Treeview', font=('Arial', 12, 'normal'))
     style.configure('Treeview.Heading', font=('Arial', 12, 'bold'))
     style.configure('TNotebook.Tab', font=('Arial', 12, 'normal'), padding=4)
+    style.configure('cicilan.TCheckbutton', font=('Arial', 12, 'normal'), background='white')
+    style.configure('pilihsemua.TCheckbutton', font=('Arial', 12, 'normal'))
