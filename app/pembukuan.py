@@ -206,7 +206,7 @@ def pembukuan(parent: ttk.Notebook):
         if range_pembukuan.get() == "0":
 
             def buat():
-                if int(bulan_spinbox.get("")) > 0 and int(tahun_spinbox.get()) > 0:
+                if int(bulan_spinbox.get()) > 0 and int(tahun_spinbox.get()) > 0:
                     buat_laporan(
                         int(range_pembukuan.get()),
                         nama_sekolah_entry.get(),

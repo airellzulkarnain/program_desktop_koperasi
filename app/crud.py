@@ -357,13 +357,15 @@ def buat_laporan(
                 laporan["Cicilan"] = pembukuan.debit
             elif not "Buat Cicilan" in uraian[0]:
                 laporan[pembukuan.uraian] = pembukuan.debit - pembukuan.kredit
-
-    laporan["saldo_awal"] = (
-        db.scalar(
-            select(Pembukuan.saldo).where(Pembukuan.id == himpunan_pembukuan[0].id - 1)
+    try: 
+        laporan["saldo_awal"] = (
+            db.scalar(
+                select(Pembukuan.saldo).where(Pembukuan.id == himpunan_pembukuan[0].id - 1)
+            )
+            or 0
         )
-        or 0
-    )
+    except IndexError:
+        laporan['saldo_awal'] = 0
     laporan["saldo_akhir"] = himpunan_pembukuan[-1].saldo
 
     pdf = FPDF(orientation="P", unit="pt", format="A4")
