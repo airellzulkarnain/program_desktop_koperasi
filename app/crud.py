@@ -104,7 +104,7 @@ def ambil_cicilan(db: Session):
 def biaya_tambahan(db: Session, uraian: str, debit: float = 0.0, kredit: float = 0.0):
     saldo_terakhir = db.scalar(select(Pembukuan.saldo).order_by(Pembukuan.id.desc())) or 0
     if debit > 0.0 and kredit == 0.0 and len(uraian) > 0:
-        db.add(Pembukuan(uraian=uraian, debit=debit, saldo=saldo_terakhir + debit))
+        db.add(Pembukuan(uraian="Biaya - biaya: "+uraian, debit=debit, saldo=saldo_terakhir + debit))
     elif kredit > 0.0 and debit == 0.0 and len(uraian) > 0:
         db.add(
             Pembukuan(
@@ -271,7 +271,7 @@ def buat_laporan(
     bulan: int | None = None,
     tahun: int | None = None,
     dari: datetime | None = None,
-    sampai: datetime | None = None,
+    sampai: datetime | None = None
 ):
     laporan = dict()
     if range_ == 0:  # Bulan
@@ -321,7 +321,7 @@ def buat_laporan(
                 laporan["Jual " + uraian[1] + " " + uraian[2]] = pembukuan.debit
             elif uraian[0] == "Cicilan":
                 laporan["Cicilan"] = pembukuan.debit
-            elif uraian[0] == "Biaya - biaya":
+            elif not 'Buat Cicilan' in uraian[0]:
                 laporan[pembukuan.uraian] = pembukuan.debit - pembukuan.kredit
 
     laporan["saldo_awal"] = (
@@ -363,23 +363,23 @@ def buat_laporan(
     pdf.set_font('Times', '', 12)
     saldo = laporan['saldo_awal']
     pdf.cell(432, 16, 'Saldo Awal', 'LRB')
-    pdf.cell(100, 16,'Rp. ' + str(laporan['saldo_awal']), 'LRB')
+    pdf.cell(100, 16,'Rp. ' + angka_mudah_dibaca(laporan['saldo_awal']), 'LRB')
     pdf.ln()
     for keterangan, nominal in laporan.items():
         if keterangan not in ['saldo_akhir', 'saldo_awal']: 
             pdf.cell(232, 16, keterangan, 'LR')
-            pdf.cell(100, 16, 'Rp.' + str(nominal) if nominal > 0 else '', 'LR')
-            pdf.cell(100, 16, 'Rp.' + str(nominal) if nominal < 0 else '', 'LR')
+            pdf.cell(100, 16, 'Rp.' + angka_mudah_dibaca(nominal) if nominal > 0 else '', 'LR')
+            pdf.cell(100, 16, 'Rp.' + angka_mudah_dibaca(nominal) if nominal < 0 else '', 'LR')
             saldo += nominal
-            pdf.cell(100, 16, 'Rp.' + str(saldo), 'LR')
+            pdf.cell(100, 16, '', 'LR')
             pdf.ln()
     pdf.cell(432, 16, 'Saldo Akhir', 'LRT')
-    pdf.cell(100, 16,'Rp. ' + str(laporan['saldo_akhir']), 'LRT')
+    pdf.cell(100, 16,'Rp. ' + angka_mudah_dibaca(laporan['saldo_akhir']), 'LRT')
     pdf.ln()
     pdf.cell(532, 16, '', 'T')
     pdf.ln()
     
-    pdf.output(dir_loc + file_name)
+    pdf.output(dir_loc + '/' + file_name)
 
 
 def verifikasi_kunci_akses(db: Session, key: str):

@@ -4,6 +4,8 @@ from tkinter.ttk import Style
 def stylize(style: Style):
     style = style()
     style.configure('TButton', font=('Arial', 12, 'normal'))
+    style.configure('TRadiobutton', font=('Arial', 12, 'normal'))
+    style.configure('TSpinbox', font=('Arial', 12, 'normal'))
     style.configure('green.TButton', foreground='green', font=('Arial', 14, 'bold'))
     style.configure('blue.TButton', foreground='blue', font=('Arial', 14, 'bold'))
     style.configure('red.TButton', foreground='red', font=('Arial', 14, 'bold'))

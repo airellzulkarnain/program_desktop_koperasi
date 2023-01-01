@@ -14,9 +14,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 
 engine = create_engine(
-    # f"sqlite:///{Path.home()}/.program_koperasi.db", connect_args={"check_same_thread": False}
-    "sqlite:///./program_koperasi.sqlite",
-    connect_args={"check_same_thread": False},
+    f"sqlite:///{Path.home()}/.program_koperasi.db", connect_args={"check_same_thread": False}
+    # "sqlite:///./program_koperasi.sqlite",
+    # connect_args={"check_same_thread": False},
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
