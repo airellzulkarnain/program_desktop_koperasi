@@ -6,7 +6,6 @@ from database import engine, get_db
 from sqlalchemy.orm import Session
 import crud
 from penjualan import penjualan
-from cicilan import cicilan
 from pembukuan import pembukuan
 from stok import stok
 from stylize import stylize
@@ -26,7 +25,7 @@ def main(parent: tk.Tk):
     parent.withdraw()
     main_window = tk.Toplevel(parent)
     main_window.wm_protocol('WM_DELETE_WINDOW', lambda: parent.destroy())
-    main_window.title('Program Koperasi | Oleh Airell Zulkarnain')
+    main_window.title('STOK OPNAME KOPERASI | Oleh Airell Zulkarnain')
     width = parent.winfo_screenwidth()
     height = parent.winfo_screenheight()
     main_window.geometry(f'{width-40}x{height-90}+{12}+{16}')
@@ -36,8 +35,7 @@ def main(parent: tk.Tk):
     panes.grid(column=1, row=1, sticky=tk.NSEW)
     panes.add(stok(panes), text='Stok')
     panes.add(penjualan(panes), text='Penjualan')
-    panes.add(cicilan(panes), text='Cicilan')
-    panes.add(pembukuan(panes), text='Pembukuan')
+    panes.add(pembukuan(panes), text='Laporan')
 
     panes.columnconfigure(1, weight=1)
     panes.rowconfigure(1, weight=1)
@@ -94,7 +92,7 @@ def ubah_kunci_akses(db: Session, parent: tk.Tk):
 
 
 root = tk.Tk()
-root.title('Program Koperasi | Login')
+root.title('STOK OPNAME KOPERASI | Login')
 root.resizable(tk.FALSE, tk.FALSE)
 root.geometry(f'400x120+{root.winfo_screenwidth()//2 - 200}+{root.winfo_screenheight()//2 - 60}')
 
@@ -104,7 +102,7 @@ kunci_akses = tk.StringVar()
 login_frame = ttk.Frame(root)
 login_frame.grid(column=1, row=1, sticky=tk.NSEW)
 
-ttk.Label(login_frame, text='Program Koperasi', anchor='center', font=('Arial', 16, 'bold')).grid(column=1, row=1, sticky=tk.EW, pady=4)
+ttk.Label(login_frame, text='STOK OPNAME KOPERASI', anchor='center', font=('Arial', 16, 'bold')).grid(column=1, row=1, sticky=tk.EW, pady=4)
 
 masukan_kunci_akses = ttk.Entry(login_frame, textvariable=kunci_akses, justify=tk.CENTER, font=('Arial', 14, 'normal'))
 masukan_kunci_akses.grid(column=1, row=2, sticky=tk.EW)

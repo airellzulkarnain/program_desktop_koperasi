@@ -4,6 +4,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 from sqlalchemy.orm import Session
 from database import get_db
+import tkcalendar as tkc
 from datetime import datetime
 import calendar
 import crud
@@ -14,37 +15,21 @@ def pembukuan(parent: ttk.Notebook):
     main_frame = ttk.Frame(parent)
     main_frame.grid(column=1, row=1, sticky=tk.NSEW)
     main_frame.columnconfigure(1, weight=1)
-    main_frame.rowconfigure(1, weight=1)
-    main_frame.rowconfigure(2, weight=1)
     main_frame.rowconfigure(3, weight=1)
-    main_frame.rowconfigure(4, weight=38)
+    main_frame.rowconfigure(4, weight=40)
     main_frame.rowconfigure(5, weight=1)
     main_frame.rowconfigure(6, weight=1)
 
-    sub_frame_1 = ttk.Frame(main_frame)
-    sub_frame_2 = ttk.Frame(main_frame)
     sub_frame_3 = ttk.Frame(main_frame)
     sub_frame_4 = ttk.Frame(main_frame)
     sub_frame_5 = ttk.Frame(main_frame)
     sub_frame_6 = ttk.Frame(main_frame)
 
-    sub_frame_1.grid(column=1, row=1, sticky=tk.NSEW)
-    sub_frame_2.grid(column=1, row=2, sticky=tk.NSEW)
     sub_frame_3.grid(column=1, row=3, sticky=tk.NSEW)
     sub_frame_4.grid(column=1, row=4, sticky=tk.NSEW)
     sub_frame_5.grid(column=1, row=5, sticky=tk.NSEW)
     sub_frame_6.grid(column=1, row=6, sticky=tk.NSEW)
 
-    sub_frame_1.columnconfigure(1, weight=1)
-    sub_frame_1.rowconfigure(1, weight=1)
-    sub_frame_2.columnconfigure(1, weight=1)
-    sub_frame_2.columnconfigure(2, weight=5)
-    sub_frame_2.columnconfigure(3, weight=1)
-    sub_frame_2.columnconfigure(4, weight=4)
-    sub_frame_2.columnconfigure(5, weight=1)
-    sub_frame_2.columnconfigure(6, weight=1)
-    sub_frame_2.columnconfigure(7, weight=1)
-    sub_frame_2.rowconfigure(1, weight=1)
     sub_frame_3.columnconfigure(1, weight=1)
     sub_frame_3.columnconfigure(2, weight=1)
     sub_frame_3.columnconfigure(3, weight=22)
@@ -60,16 +45,6 @@ def pembukuan(parent: ttk.Notebook):
     sub_frame_6.columnconfigure(4, weight=20)
     sub_frame_6.columnconfigure(5, weight=1)
     sub_frame_6.rowconfigure(1, weight=1)
-
-    ttk.Label(sub_frame_1, text="Biaya - Biaya", font=("Arial", 14, "bold")).grid(
-        column=1, row=1, sticky=tk.NSEW
-    )
-    ttk.Label(sub_frame_2, text="Keterangan", font=("Arial", 12, "normal")).grid(
-        column=1, row=1, sticky=tk.EW, padx=4, pady=6
-    )
-    ttk.Label(sub_frame_2, text="Nominal", font=("Arial", 12, "normal")).grid(
-        column=3, row=1, sticky=tk.EW, padx=4, pady=6
-    )
     ttk.Label(sub_frame_3, text="Pembukuan", font=("Arial", 14, "bold")).grid(
         column=1, row=1, sticky=tk.NSEW
     )
@@ -77,34 +52,21 @@ def pembukuan(parent: ttk.Notebook):
         sub_frame_3, text="Refresh...", command=lambda: refresh_pembukuan()
     ).grid(column=2, row=1, sticky=tk.NSEW, padx=4, pady=6)
 
-    keterangan_biaya_entry = ttk.Entry(sub_frame_2, font=("Arial", 12, "normal"))
-    keterangan_biaya_entry.grid(column=2, row=1, sticky=tk.EW, padx=4, pady=6)
-    nominal_biaya_spinbox = ttk.Spinbox(sub_frame_2, from_=500, to=10_000_000_000)
-    nominal_biaya_spinbox.grid(column=4, row=1, sticky=tk.EW, padx=4, pady=6)
-    debit_kredit = tk.StringVar()
-    ttk.Radiobutton(
-        sub_frame_2, text="Debit", value="debit", variable=debit_kredit
-    ).grid(column=5, row=1, sticky=tk.EW, padx=4, pady=6)
-    ttk.Radiobutton(
-        sub_frame_2, text="Kredit", value="kredit", variable=debit_kredit
-    ).grid(column=6, row=1, sticky=tk.EW, padx=4, pady=6)
-    biaya_button = ttk.Button(
-        sub_frame_2, text="Tambah", style="green.TButton", command=lambda: biaya_klik()
-    )
-    biaya_button.grid(column=7, row=1, sticky=tk.EW, padx=4, pady=6)
-
     pembukuan_treeview = ttk.Treeview(
         sub_frame_4,
-        columns=("tanggal", "uraian", "debit", "kredit", "saldo"),
+        columns=("tanggal", "nama_barang", "keterangan", "debit", "kredit", "saldo"),
         show="headings",
     )
     pembukuan_treeview.heading("tanggal", text="Tanggal")
-    pembukuan_treeview.column("tanggal", width=30)
-    pembukuan_treeview.heading("uraian", text="Keterangan")
-    pembukuan_treeview.column("uraian", width=360)
+    pembukuan_treeview.column("tanggal", width=20)
+    pembukuan_treeview.heading("nama_barang", text="Nama Barang")
+    pembukuan_treeview.heading("keterangan", text="Keterangan")
     pembukuan_treeview.heading("debit", text="Debit")
+    pembukuan_treeview.column("debit", width=20)
     pembukuan_treeview.heading("kredit", text="Kredit")
+    pembukuan_treeview.column("kredit", width=20)
     pembukuan_treeview.heading("saldo", text="Saldo")
+    pembukuan_treeview.column("saldo", width=20)
     pembukuan_treeview.grid(column=1, row=1, sticky=tk.NSEW)
 
     pembukuan_scrollbar = ttk.Scrollbar(
@@ -125,13 +87,14 @@ def pembukuan(parent: ttk.Notebook):
     cari_pembukuan_button.grid(column=2, row=1, sticky=tk.NSEW, padx=4, pady=6)
 
     range_pembukuan = tk.StringVar()
-    ttk.Radiobutton(
+    bulan = ttk.Radiobutton(
         sub_frame_6, text="Bulan", variable=range_pembukuan, value="0"
-    ).grid(column=1, row=1, sticky=tk.NSEW, padx=4, pady=6)
+    )
+    bulan.grid(column=1, row=1, sticky=tk.NSEW, padx=4, pady=6)
+    bulan.invoke()
     ttk.Radiobutton(
         sub_frame_6, text="Tahun", variable=range_pembukuan, value="1"
     ).grid(column=2, row=1, sticky=tk.NSEW, padx=4, pady=6)
-    # ttk.Radiobutton(sub_frame_6, text='Custom', variable=range_pembukuan, value='2').grid(column=3, row=1, sticky=tk.NSEW, padx=4, pady=6)
     buat_laporan_button = ttk.Button(
         sub_frame_6,
         text="Buat Laporan",
@@ -149,41 +112,14 @@ def pembukuan(parent: ttk.Notebook):
                 "",
                 "end",
                 values=(
-                    pembukuan.tanggal.date(),
-                    pembukuan.uraian,
-                    "Rp. " + crud.angka_mudah_dibaca(pembukuan.debit),
-                    "Rp. " + crud.angka_mudah_dibaca(pembukuan.kredit),
-                    "Rp. " + crud.angka_mudah_dibaca(pembukuan.saldo),
+                    pembukuan.tanggal,
+                    pembukuan.nama_barang, 
+                    pembukuan.keterangan,
+                    crud.angka_mudah_dibaca(pembukuan.debit),
+                    crud.angka_mudah_dibaca(pembukuan.kredit),
+                    crud.angka_mudah_dibaca(pembukuan.saldo),
                 ),
             )
-
-    def biaya_klik():
-        if messagebox.askokcancel(
-            "Warning !",
-            "Pastikan seluruh data sudah lengkap dan benar ! Setelah ini data tidak dapat dihapus dari pembukuan !",
-            icon=messagebox.WARNING,
-        ):
-            if (
-                len(keterangan_biaya_entry.get()) > 0
-                and int(nominal_biaya_spinbox.get()) > 0
-                and len(debit_kredit.get()) > 0
-            ):
-                if debit_kredit.get() == "debit":
-                    biaya_tambahan(
-                        keterangan_biaya_entry.get(),
-                        debit=int(nominal_biaya_spinbox.get()),
-                    )
-                elif debit_kredit.get() == "kredit":
-                    biaya_tambahan(
-                        keterangan_biaya_entry.get(),
-                        kredit=int(nominal_biaya_spinbox.get()),
-                    )
-                keterangan_biaya_entry.delete(0, len(keterangan_biaya_entry.get()))
-                nominal_biaya_spinbox.set(0)
-                debit_kredit.set("")
-                refresh_pembukuan()
-            else:
-                messagebox.showwarning("Warning !", "Harap lengkapi seluruh data !")
 
     def buat_laporan_klik():
         def dismiss():
@@ -206,41 +142,37 @@ def pembukuan(parent: ttk.Notebook):
         if range_pembukuan.get() == "0":
 
             def buat():
-                if int(bulan_spinbox.get()) > 0 and int(tahun_spinbox.get()) > 0:
-                    buat_laporan(
-                        int(range_pembukuan.get()),
-                        nama_sekolah_entry.get(),
-                        filedialog.askdirectory(title="Pilih Folder"),
-                        bulan=int(bulan_spinbox.get()),
-                        tahun=int(tahun_spinbox.get()),
-                    )
-                    dismiss()
+                buat_laporan(
+                    int(range_pembukuan.get()),
+                    nama_sekolah_entry.get(),
+                    filedialog.askdirectory(title="Pilih Folder"),
+                    bulan=int(tanggal.get_date().month),
+                    tahun=int(tanggal.get_date().year),
+                )
+                dismiss()
 
             nama_sekolah_entry = ttk.Entry(main_frame)
-            ttk.Label(main_frame, text="Bulan").grid(
+            ttk.Label(main_frame, text="Tanggal: ").grid(
                 column=1, row=1, sticky=tk.NSEW, padx=4, pady=6
             )
-            ttk.Label(main_frame, text="Tahun").grid(
-                column=2, row=1, sticky=tk.NSEW, padx=4, pady=6
-            )
-            bulan_spinbox = ttk.Spinbox(main_frame, from_=1, to=12)
-            tahun_spinbox = ttk.Spinbox(main_frame, from_=2022, to=2100)
+            tanggal = tkc.DateEntry(main_frame)
+            tanggal.grid(column=1, row=2, sticky=tk.NSEW, padx=4, pady=6)
+            tanggal.focus()
+            tanggal.bind('<Return>', lambda e: nama_sekolah_entry.focus())
+            nama_sekolah_entry.bind('<Return>', lambda e: buat_button.invoke())
             ttk.Label(main_frame, text="Instansi: ").grid(
-                column=1, columnspan=2, row=3, sticky=tk.NSEW, padx=4, pady=6
+                column=1, row=3, sticky=tk.NSEW, padx=4, pady=6
             )
             nama_sekolah_entry.grid(
-                column=1, columnspan=2, row=4, sticky=tk.NSEW, padx=4, pady=6
+                column=1, row=4, sticky=tk.NSEW, padx=4, pady=6
             )
-            bulan_spinbox.grid(column=1, row=2, sticky=tk.NSEW, padx=4, pady=6)
-            tahun_spinbox.grid(column=2, row=2, sticky=tk.NSEW, padx=4, pady=6)
             buat_button = ttk.Button(
                 main_frame, text="Buat", style="blue.TButton", command=lambda: buat()
             )
             buat_button.grid(
-                column=1, columnspan=2, row=5, sticky=tk.NSEW, padx=4, pady=6
+                column=1, row=5, sticky=tk.NSEW, padx=4, pady=6
             )
             main_frame.columnconfigure(1, weight=1)
-            main_frame.columnconfigure(2, weight=1)
             main_frame.rowconfigure(1, weight=1)
             main_frame.rowconfigure(2, weight=1)
             main_frame.rowconfigure(3, weight=1)
@@ -266,7 +198,11 @@ def pembukuan(parent: ttk.Notebook):
                 column=1, row=3, sticky=tk.NSEW, padx=4, pady=6
             )
             nama_sekolah_entry.grid(column=1, row=4, sticky=tk.NSEW, padx=4, pady=6)
+            nama_sekolah_entry.bind('<Return>', lambda e: buat_button.invoke())
             tahun_spinbox.grid(column=1, row=2, sticky=tk.NSEW, padx=4, pady=6)
+            tahun_spinbox.focus()
+            tahun_spinbox.bind('<Return>', lambda e: nama_sekolah_entry.focus())
+            
             buat_button = ttk.Button(
                 main_frame, text="Buat", style="blue.TButton", command=lambda: buat()
             )
@@ -293,9 +229,9 @@ def pembukuan(parent: ttk.Notebook):
                 values=(
                     pembukuan.tanggal.date(),
                     pembukuan.uraian,
-                    "Rp. " + crud.angka_mudah_dibaca(pembukuan.debit),
-                    "Rp. " + crud.angka_mudah_dibaca(pembukuan.kredit),
-                    "Rp. " + crud.angka_mudah_dibaca(pembukuan.saldo),
+                    crud.angka_mudah_dibaca(pembukuan.debit),
+                    crud.angka_mudah_dibaca(pembukuan.kredit),
+                    crud.angka_mudah_dibaca(pembukuan.saldo),
                 ),
             )
 
@@ -322,7 +258,5 @@ def buat_laporan(
     dir_loc: str,
     bulan: int | None = None,
     tahun: int | None = None,
-    dari: datetime | None = None,
-    sampai: datetime | None = None,
 ):
-    crud.buat_laporan(db, range_, sekolah, dir_loc, bulan, tahun, dari, sampai)
+    crud.buat_laporan(db, range_, sekolah, dir_loc, bulan, tahun)
