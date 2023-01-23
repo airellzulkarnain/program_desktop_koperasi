@@ -169,10 +169,10 @@ def buat_laporan(
     pdf.set_font("Times", "B", 16)
     pdf.cell(0, 16, sekolah.upper(), align="C")
     pdf.ln(16)
-    pdf.set_font("Times", "", 14)
+    pdf.set_font("Times", "", 16)
     pdf.cell(0, 14, "Laporan Koperasi", align="C")
     pdf.ln(14 * 1.25)
-    pdf.set_font("Times", "", 12)
+    pdf.set_font("Times", "", 14)
     if range_ == 0:  # Bulan
         pdf.cell(0, 10, f"Per Bulan {cld.month_name[bulan]} {tahun}", align="C")
         pdf.ln(12 * 1.25)
@@ -182,25 +182,39 @@ def buat_laporan(
         pdf.ln(12 * 1.25)
         file_name = f"laporan_{tahun}.pdf"
 
-    pdf.set_font("Times", "B", 14)
-    pdf.cell(116, 16, "Nama Barang", 1, align="C")
-    pdf.cell(116, 16, "Keterangan", 1, align="C")
-    pdf.cell(100, 16, "Debit", 1, align="C")
-    pdf.cell(100, 16, "Kredit", 1, align="C")
-    pdf.cell(100, 16, "Saldo", 1, align="C")
-    pdf.ln()
+
     pdf.set_font("Times", "", 12)
     himpunan_barang = dict()
+    counter = 0
+    first = True
     for pembukuan in himpunan_pembukuan:
+        counter += 1
         border = 'LR'
         try: 
             himpunan_barang[pembukuan.nama_barang] += pembukuan.kredit
         except KeyError:
             himpunan_barang.update({pembukuan.nama_barang: pembukuan.kredit })
-            border = 'LRT'
+            counter = 1
+            if first:
+                first = False
+            else: 
+                pdf.cell(532, 16, "", "T")
+            pdf.ln()
+            pdf.set_font("Times", "B", 12)
+            pdf.cell(532, 16, f'Nama Barang: {pembukuan.nama_barang}, Saldo Awal: {pembukuan.saldo + (pembukuan.kredit - pembukuan.debit)}')
+            pdf.ln()
+            pdf.cell(24, 16, "No", 1, align="C")
+            pdf.cell(92, 16, "Tanggal", 1, align="C")
+            pdf.cell(116, 16, "Keterangan", 1, align="C")
+            pdf.cell(100, 16, "Debit", 1, align="C")
+            pdf.cell(100, 16, "Kredit", 1, align="C")
+            pdf.cell(100, 16, "Saldo", 1, align="C")
+            pdf.set_font("Times", "", 12)
+            pdf.ln()
 
         nominal = pembukuan.debit - pembukuan.kredit
-        pdf.cell(116, 16, pembukuan.nama_barang, border)
+        pdf.cell(24, 16, angka_mudah_dibaca(counter), border)
+        pdf.cell(92, 16, str(pembukuan.tanggal), border)
         pdf.cell(116, 16, pembukuan.keterangan, border)
         pdf.cell(
             100,
@@ -224,7 +238,9 @@ def buat_laporan(
     pdf.set_font("Times", "", 12)
     pdf.ln()
     for barang, jumlah in himpunan_barang.items():
-        nama_barang, ukuran = barang.split(' ')
+        nama_barang = barang.split(' ')
+        ukuran = nama_barang.pop()
+        nama_barang = ' '.join(nama_barang)
         ukuran = None if ukuran == '#' else ukuran
         barang_ = db.scalar(select(Barang).where(and_(Barang.nama_barang == nama_barang, Barang.ukuran == ukuran)))
         pdf.cell(532, 16, f"{barang}:\t\t{angka_mudah_dibaca(jumlah)} x (Rp. {angka_mudah_dibaca(barang_.harga_jual)} - Rp. {angka_mudah_dibaca(barang_.modal)}) = Rp. {angka_mudah_dibaca(jumlah*(barang_.harga_jual-barang_.modal))}")
