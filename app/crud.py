@@ -31,7 +31,7 @@ def ambil_uuid():
     )
 
 
-def jual(db: Session, id_barang: int, jumlah_terjual: int, keterangan: str):
+def jual(db: Session, id_barang: int, jumlah_terjual: int, keterangan: str, tanggal: datetime.date):
     barang = db.scalar(select(Barang).where(Barang.id == id_barang))
     if 0 < jumlah_terjual <= barang.tersedia_saat_ini:
         barang.tersedia_saat_ini -= jumlah_terjual
@@ -44,6 +44,7 @@ def jual(db: Session, id_barang: int, jumlah_terjual: int, keterangan: str):
                 keterangan=f'Penjualan {keterangan}', 
                 kredit=jumlah_terjual, 
                 saldo=saldo_terakhir - jumlah_terjual, 
+                tanggal=tanggal
             )
         )
         db.commit()

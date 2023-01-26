@@ -3,6 +3,8 @@ from tkinter import ttk
 from tkinter import messagebox
 from sqlalchemy.orm import Session
 from database import get_db
+from datetime import datetime
+import tkcalendar as tkc
 import crud
 
 
@@ -37,7 +39,7 @@ def penjualan(parent: ttk.Notebook):
     )
     treeview_jual = ttk.Treeview(
         sub_frame_3,
-        columns=("barang", "jumlah", "harga_satuan", "total", "keterangan"),
+        columns=("barang", "jumlah", "harga_satuan", "total", "keterangan", "tanggal"),
         show="headings",
     )
     scrollbar_jual = ttk.Scrollbar(
@@ -61,6 +63,9 @@ def penjualan(parent: ttk.Notebook):
     radio_button.grid(column=1, row=1)
     radio_button.invoke()
     ttk.Radiobutton(sub_frame_2, text='Kredit', variable=kredit_tunai, value='kredit').grid(column=2, row=1)
+    ttk.Label(sub_frame_2, text="Tanggal").grid(column=3, row=1)
+    dateEntry = tkc.DateEntry(sub_frame_2)
+    dateEntry.grid(column=4, row=1)    
 
     def perbarui_harga():
         try:
@@ -98,7 +103,8 @@ def penjualan(parent: ttk.Notebook):
             {
                 "id_barang": himpunan_barang[pilih_barang_combobox.get()]["id"],
                 "jumlah_terjual": int(jumlah_barang_spinbox.get()),
-                "keterangan": kredit_tunai.get().capitalize()
+                "keterangan": kredit_tunai.get().capitalize(), 
+                "tanggal": dateEntry.get_date(), 
             }
         )
         treeview_jual.insert(
@@ -111,7 +117,8 @@ def penjualan(parent: ttk.Notebook):
                     himpunan_barang[pilih_barang_combobox.get()]["harga"]
                 ),
                 crud.angka_mudah_dibaca(total),
-                kredit_tunai.get()
+                kredit_tunai.get(), 
+                dateEntry.get_date()
             ),
         )
         himpunan_barang[pilih_barang_combobox.get()]["tersedia"] -= int(
@@ -120,6 +127,7 @@ def penjualan(parent: ttk.Notebook):
         pilih_barang_combobox.set("")
         jumlah_barang_spinbox.configure(from_=0, to=0)
         jumlah_barang_spinbox.set(0)
+        dateEntry.set_date(datetime.now())
         harga.set("Harga: Rp. 0 x 0 (Rp. 0)")
         radio_button.invoke()
         total_harga_value += total
@@ -147,7 +155,7 @@ def penjualan(parent: ttk.Notebook):
     def konfirmasi():
         if messagebox.askokcancel("Konfirmasi", "Apakah anda yakin ?"):
             for barang in himpunan_jual:
-                jual(barang["id_barang"], barang["jumlah_terjual"], barang["keterangan"])
+                jual(barang["id_barang"], barang["jumlah_terjual"], barang["keterangan"], barang["tanggal"])
             refresh()
 
     def batalkan():
@@ -201,13 +209,14 @@ def penjualan(parent: ttk.Notebook):
     treeview_jual.grid(column=1, row=1, sticky=tk.NSEW)
     scrollbar_jual.grid(column=2, row=1, sticky=tk.NS)
     treeview_jual.configure(yscrollcommand=scrollbar_jual.set)
+    treeview_jual.heading("tanggal", text="Tanggal")
     treeview_jual.heading("barang", text="Barang")
     treeview_jual.heading("jumlah", text="Jumlah")
     treeview_jual.heading("harga_satuan", text="Harga Satuan")
     treeview_jual.heading("total", text="Total")
     treeview_jual.heading("keterangan", text="Keterangan")
     treeview_jual.column("barang", width=500)
-    treeview_jual.column("jumlah", width=10)
+    treeview_jual.column("jumlah", width=60)
     batalkan_button.grid(column=3, row=1, sticky=tk.NSEW, padx=6, pady=6)
     konfirmasi_button.grid(column=2, row=1, sticky=tk.NSEW, padx=6, pady=6)
     ttk.Label(
@@ -237,5 +246,5 @@ def muat_barang(db: Session) -> dict:
 
 
 @get_db
-def jual(db: Session, id_barang: int, jumlah_terjual: int, keterangan: str):
-    crud.jual(db, id_barang, jumlah_terjual, keterangan)
+def jual(db: Session, id_barang: int, jumlah_terjual: int, keterangan: str, tanggal: datetime.date):
+    crud.jual(db, id_barang, jumlah_terjual, keterangan, tanggal)
